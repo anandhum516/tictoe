@@ -5,25 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Tic Tac Toe</title>
     <style>
-        .board {
-            display: grid;
-            grid-template-columns: repeat(3, 100px);
-            grid-template-rows: repeat(3, 100px);
-            gap: 2px;
-        }
-        .cell {
-            width: 100px;
-            height: 100px;
-            background-color: #f0f0f0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            font-size: 3em;
-            cursor: pointer;
-        }
         body {
             font-family: Arial, sans-serif;
-            background-color: #f0f0f0;
+            background-color: #2980b9;
             margin: 0;
             padding: 0;
             display: flex;
@@ -34,7 +18,9 @@
         }
 
         h1 {
-            color: #333;
+            color: #fff;
+            margin-bottom: 20px;
+            text-align: center;
         }
 
         .board {
@@ -42,52 +28,126 @@
             grid-template-columns: repeat(3, 100px);
             grid-template-rows: repeat(3, 100px);
             gap: 2px;
-            margin-top: 20px;
+            border: 2px solid #fff;
+            background-color: #fff;
+            padding: 2px;
         }
 
         .cell {
             width: 100px;
             height: 100px;
-            background-color: #fff;
+            background-color: #ddd;
             display: flex;
             justify-content: center;
             align-items: center;
             font-size: 3em;
             cursor: pointer;
-            border: 2px solid #333;
+            border: 2px solid #fff;
             transition: background-color 0.3s ease;
         }
 
         .cell:hover {
-            background-color: #ddd;
+            background-color: #ccc;
         }
 
         button {
             padding: 10px 20px;
             font-size: 1em;
-            background-color: #333;
+            background-color: #27ae60;
             color: #fff;
             border: none;
             cursor: pointer;
             margin-top: 20px;
+            margin-right: 10px; /* Add right margin */
             transition: background-color 0.3s ease;
+            border-radius: 5px;
+            outline: none; /* Remove outline */
         }
 
         button:hover {
-            background-color: #555;
+            background-color: #219a52;
+        }
+
+        .btn-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .undo-btn {
+            margin-left: 10px; /* Adjust left margin */
+            margin-right: 10px; /* Add right margin */
+        }
+
+        .message {
+            margin-top: 20px;
+            font-size: 1.5em;
+            color: #fff;
+            text-align: center;
+            background-color: #2ecc71;
+            padding: 10px 20px;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .message span {
+            font-weight: bold;
+        }
+
+        /* Styling for radio inputs */
+        input[type="radio"] {
+            display: none; /* Hide the default radio input */
+        }
+
+        /* Custom styling for radio inputs */
+        input[type="radio"] + label {
+            cursor: pointer;
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: #fff;
+            border: 2px solid transparent; /* Add border */
+            border-radius: 5px;
+            margin-right: 10px;
+            transition: background-color 0.3s ease;
+        }
+
+        /* Styling for checked radio inputs */
+        input[type="radio"]:checked + label {
+            background-color: #2980b9;
+            border-color: #fff; /* Change border color */
+        }
+        .mode-selector {
+            margin-top: 20px; /* Add margin-top */
         }
     </style>
 </head>
+
+
 <body>
-    <h1>Tic Tac Toe</h1>
-    <div class="board" id="board"></div>
-    <button onclick="startGame()">Start New Game</button>
-    <button onclick="undoMove()">Undo</button>
+    <div class="container">
+        <div class="content">
+            <h1>Tic Tac Toe</h1>
+            <div class="board" id="board"></div>
+            <div class="btn-container">
+                <button onclick="startGame()">Start New Game</button>
+                <button onclick="undoMove()" id="undoButton" disabled>Undo</button>
+            </div>
+            <div class="mode-selector">
+                <input type="radio" name="mode" id="player" value="player" checked>
+                <label for="player">Two Players</label>
+                <input type="radio" name="mode" id="ai" value="ai">
+                <label for="ai">AI</label>
+            </div>
+            <div class="message"></div>
+        </div>
+    </div>
     <script>
         let board = ['', '', '', '', '', '', '', '', ''];
         let currentPlayer = 'X';
         let gameInProgress = false;
         let singlePlayerMode = false;
+        let moveHistory = [];
 
         const winningCombos = [
             [0, 1, 2], [3, 4, 5], [6, 7, 8],
@@ -101,7 +161,8 @@
             board = ['', '', '', '', '', '', '', '', ''];
             currentPlayer = 'X';
             gameInProgress = true;
-            singlePlayerMode = confirm("Play against AI?");
+            document.getElementById('undoButton').disabled = true;
+            moveHistory = [];
 
             const boardDiv = document.getElementById('board');
             boardDiv.innerHTML = '';
@@ -114,6 +175,8 @@
                 boardDiv.appendChild(cell);
             }
 
+            singlePlayerMode = document.querySelector('input[name="mode"]:checked').value === 'ai';
+
             if (singlePlayerMode && currentPlayer === 'O') {
                 makeAiMove();
             }
@@ -121,6 +184,9 @@
 
         function makeMove(index) {
             if (!gameInProgress || board[index] !== '') return;
+
+            moveHistory.push([...board]);
+            document.getElementById('undoButton').disabled = false;
 
             board[index] = currentPlayer;
             renderBoard();
@@ -142,6 +208,15 @@
             if (singlePlayerMode && currentPlayer === 'O') {
                 makeAiMove();
             }
+        }
+
+        function undoMove() {
+            if (!gameInProgress || moveHistory.length === 0) return;
+
+            board = moveHistory.pop();
+            currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
+            renderBoard();
+            document.getElementById('undoButton').disabled = moveHistory.length === 0;
         }
 
         function makeAiMove() {
@@ -220,54 +295,8 @@
             });
         }
 
-        <!-- Add this JavaScript code in the <script> section of your HTML code -->
-    // Define a variable to store the moves history
-    let movesHistory = [];
-
-    // Modify the makeMove function to record moves
-    function makeMove(index) {
-        if (!gameInProgress || board[index] !== '') return;
-
-        // Record the move before updating the board
-        const move = { index, player: currentPlayer };
-        movesHistory.push(move);
-
-        board[index] = currentPlayer;
-        renderBoard();
-
-        if (checkWinner()) {
-            alert(`${currentPlayer} wins!`);
-            gameInProgress = false;
-            return;
-        }
-
-        if (!board.includes('')) {
-            alert("It's a draw!");
-            gameInProgress = false;
-            return;
-        }
-
-        currentPlayer = currentPlayer === 'X' ? 'O' : 'X';
-
-        if (singlePlayerMode && currentPlayer === 'O') {
-            makeAiMove();
-        }
-    }
-
-    // Implement the undoMove function
-    function undoMove() {
-        if (!gameInProgress) return;
-
-        // Check if there are any moves to undo
-        if (movesHistory.length > 0) {
-            const lastMove = movesHistory.pop(); // Get the last move made
-            board[lastMove.index] = ''; // Clear the cell
-            renderBoard(); // Update the board display
-            currentPlayer = lastMove.player === 'X' ? 'O' : 'X'; // Switch player turn
-        }
-    }
-
         startGame();
     </script>
 </body>
+
 </html>
